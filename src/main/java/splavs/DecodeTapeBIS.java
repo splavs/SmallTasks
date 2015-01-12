@@ -1,8 +1,6 @@
 package splavs;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
 /**
  * Decode Tape program.
@@ -20,21 +18,26 @@ class DecodeTapeBIS {
         BufferedInputStream bufferedInputStream = new BufferedInputStream(System.in);
         int bufferSize = 12;
         byte[] byteBuffer = new byte[bufferSize];
-        int numberOfBytes;
-
-        String line = null;
 
         StringBuilder result = new StringBuilder();
 
         try {
 
-            while ((numberOfBytes = bufferedInputStream.read(byteBuffer, 0, bufferSize)) >= 0) {
-                line = new String(byteBuffer);
-                if (line.matches("^\\|[ o]{5}.[ o]{3}\\|\\n$")) {
-                    line = line.replaceAll("[\\|.]", "").replaceAll(" ", "0").replaceAll("o", "1").trim();
-
-                    result.append((char) Integer.parseInt(line, 2));
+            while (bufferedInputStream.read(byteBuffer, 0, bufferSize) >= 0) {
+                char c = 0;
+                if (124 == byteBuffer[0]) { // |
+                    for (byte bc : byteBuffer) {
+                        if ((32 == bc) || (111 == bc)) { // 32 == space 111 == o
+                            c <<= 1;
+                            if (111 == bc) {
+                                c++;
+                            }
+                        }
+                    }
+                    result.append(c);
                 }
+
+
             }
         } catch (Exception e) {
             e.printStackTrace();
