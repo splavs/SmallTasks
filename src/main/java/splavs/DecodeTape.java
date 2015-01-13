@@ -13,7 +13,6 @@ import java.io.FileReader;
  */
 class DecodeTape {
     public static void main(String[] args) throws Exception {
-        Thread.sleep(5000);
         new DecodeTape().parse();
     }
 
