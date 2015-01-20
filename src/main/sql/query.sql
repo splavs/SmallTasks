@@ -300,14 +300,9 @@ END;
 -- 13.4	Написать функцию, которая определяет, есть ли у продавца подчиненные и возвращает их количество - тип данных INTEGER. В качестве входного параметра функции используется employeeID. Название функции IsBoss. Продемонстрировать использование функции для всех продавцов из таблицы Employees.
 SET SERVEROUTPUT ON;
 DECLARE
-  P_EMPLOYEE_ID NUMBER;
   v_Return NUMBER;
 BEGIN
-  P_EMPLOYEE_ID := 2;
-
-  v_Return := ISBOSS(
-      P_EMPLOYEE_ID => P_EMPLOYEE_ID
-  );
+  v_Return := ISBOSS(2);
 
   DBMS_OUTPUT.PUT_LINE('v_Return = ' || v_Return);
 
