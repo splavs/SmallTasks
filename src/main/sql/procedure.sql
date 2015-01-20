@@ -1,7 +1,14 @@
 -- Author Vyacheslav Silchenko
 
 -- Task 13.1
--- 13.1	Написать процедуру, которая возвращает самый крупный заказ для каждого из продавцов за определенный год. В результатах не может быть несколько заказов одного продавца, должен быть только один и самый крупный. В результатах запроса должны быть выведены следующие колонки: колонка с именем и фамилией продавца (firstName и lastName – пример: Nancy Davolio), номер заказа и его стоимость. В запросе надо учитывать Discount при продаже товаров. Процедуре передается год, за который надо сделать отчет, и количество возвращаемых записей. Результаты запроса должны быть упорядочены по убыванию суммы заказа. Название процедуры GreatestOrders. Необходимо продемонстрировать использование этой процедуры.
+-- 13.1	Написать процедуру, которая возвращает самый крупный заказ для каждого из продавцов за определенный год.
+-- В результатах не может быть несколько заказов одного продавца, должен быть только один и самый крупный.
+-- В результатах запроса должны быть выведены следующие колонки: колонка с именем и фамилией продавца
+-- (firstName и lastName – пример: Nancy Davolio), номер заказа и его стоимость.
+-- В запросе надо учитывать Discount при продаже товаров.
+-- Процедуре передается год, за который надо сделать отчет, и количество возвращаемых записей.
+-- Результаты запроса должны быть упорядочены по убыванию суммы заказа. Название процедуры GreatestOrders.
+-- Необходимо продемонстрировать использование этой процедуры.
 -- Подсказка: для вывода результатов можно использовать DBMS_OUTPUT.
 -- Также помимо демонстрации вызова процедуры в скрипте Query.sql надо написать отдельный ДОПОЛНИТЕЛЬНЫЙ проверочный запрос для тестирования правильности работы процедуры GreatestOrders. Проверочный запрос должен выводить в удобном для сравнения с результатами работы процедур виде для определенного продавца для всех его заказов за определенный указанный год в результатах следующие колонки: имя продавца, номер заказа, сумму заказа. Проверочный запрос не должен повторять запрос, написанный в процедуре, - он должен выполнять только то, что описано в требованиях по нему.
 -- ВСЕ ЗАПРОСЫ ПО ВЫЗОВУ ПРОЦЕДУР ДОЛЖНЫ БЫТЬ НАПИСАНЫ В ФАЙЛЕ Query.sql – см. пояснение ниже в разделе: Error! Reference source not found..
@@ -12,9 +19,7 @@ IS
     SELECT *
     FROM
       (SELECT
-         (SELECT concat(firstname, lastname)
-          FROM employees e0
-          WHERE e0.employeeid = e.employeeid)           AS employeefullname,
+         concat(firstname, lastname) AS employeefullname,
          o.orderid,
          od.quantity * od.unitprice * (1 - od.discount) AS total
        FROM employees e LEFT JOIN orders o
@@ -43,20 +48,25 @@ IS
   END;
 
 -- Task 13.2
--- 13.2	Написать процедуру, которая возвращает заказы в таблице Orders, согласно указанному сроку доставки в днях (разница между orderDate и shippedDate).  В результатах должны быть возвращены заказы, срок которых превышает переданное значение или еще недоставленные заказы. Значению по умолчанию для передаваемого срока 35 дней. Название процедуры ShippedOrdersDiff. Процедура должна выводить следующие колонки: orderID, orderDate, shippedDate, ShippedDelay (разность в днях между shippedDate и orderDate), specifiedDelay (переданное в процедуру значение).  Результат должен быть отсортирован по shippedDelay.
+-- 13.2	Написать процедуру, которая возвращает заказы в таблице Orders,
+-- согласно указанному сроку доставки в днях (разница между orderDate и shippedDate).
+-- В результатах должны быть возвращены заказы, срок которых превышает переданное значение или еще недоставленные заказы.
+-- Значению по умолчанию для передаваемого срока 35 дней. Название процедуры ShippedOrdersDiff.
+-- Процедура должна выводить следующие колонки: orderID, orderDate, shippedDate, ShippedDelay
+-- (разность в днях между shippedDate и orderDate), specifiedDelay (переданное в процедуру значение).
+-- Результат должен быть отсортирован по shippedDelay.
 -- Подсказка: для вывода результатов можно использовать DBMS_OUTPUT.
 -- Необходимо продемонстрировать использование этой процедуры.
-
 
 CREATE OR REPLACE PROCEDURE ShippedOrdersDiff(p_shippedDelay IN NUMBER DEFAULT 35) IS
   CURSOR v_shipped_delay_cursor IS
     SELECT
       orderid,
       orderdate,
-      shippeddate,
-      shippeddate - orderdate AS ShippedDelay
+      NVL(to_char(shippeddate),'Not yet delivered') AS ShippedDate,
+      NVL(to_char(shippeddate - orderdate), 'Not yet delivered') AS ShippedDelay
     FROM orders
-    WHERE shippeddate - orderdate > p_shippeddelay
+    WHERE (shippeddate - orderdate > p_shippeddelay) OR (shippeddate IS NULL)
     ORDER BY shippeddelay;
 
   BEGIN
@@ -106,3 +116,20 @@ CREATE OR REPLACE FUNCTION IsBoss(p_employee_id IN NUMBER) RETURN INTEGER IS
     RETURN v_counter - 1;
 
   END;
+
+CREATE OR REPLACE FUNCTION IsBoss2(p_employee_id IN NUMBER) RETURN INTEGER IS
+  v_counter NUMBER;
+  BEGIN
+    SELECT count(1) INTO v_counter
+    FROM employees
+    START WITH employeeid = p_employee_id
+    CONNECT BY PRIOR employeeid = reportsto;
+
+    RETURN v_counter - 1;
+
+  END;
+
+SELECT *
+FROM employees
+START WITH employeeid = 2
+CONNECT BY PRIOR employeeid = reportsto;

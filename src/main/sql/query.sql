@@ -8,15 +8,14 @@ SELECT
   to_char(shippedDate, 'YYYY-MM-DD') AS "shippedDate",
   shipVia
 FROM Orders
-WHERE shippedDate > to_date('1998-05-05', 'YYYY-MM-DD') AND shipVia >= 2;
+WHERE shippedDate >= to_date('1998-05-05', 'YYYY-MM-DD') AND shipVia >= 2;
+-- Заказы не попали потому что NULL > to_date('1998-05-05', 'YYYY-MM-DD') не верно.
 
 -- Task 1.2
 -- 1.2	Написать запрос, который выводит только недоставленные заказы из таблицы Orders. В результатах запроса высвечивать для колонки shippedDate вместо значений NULL строку ‘Not Shipped’ – необходимо использовать CASЕ выражение. Запрос должен выбирать только колонки orderID и shippedDate.
 SELECT
   orderId,
-  CASE WHEN shippedDate IS NULL THEN 'Not Shipped'
-  END
-    AS "shippedDate"
+  NVL(to_char(shippedDate), 'Not Shipped' ) AS "shippedDate"
 FROM Orders
 WHERE shippedDate IS NULL;
 
@@ -41,13 +40,15 @@ WHERE country IN ('USA', 'Canada')
 ORDER BY contactName, country;
 
 -- Task 2.2
--- 2.2	Выбрать из таблицы Customers всех заказчиков, не проживающих в USA и Canada. Запрос сделать с помощью оператора IN. Запрос должен выбирать колонки с именем пользователя и названием страны а. Упорядочить результаты запроса по имени заказчиков в порядке убывания.
+-- 2.2	Выбрать из таблицы Customers всех заказчиков, не проживающих в USA и Canada. Запрос сделать с помощью оператора IN.
+-- Запрос должен выбирать колонки с именем пользователя и названием страны а.
+-- Упорядочить результаты запроса по имени заказчиков в порядке убывания.
 SELECT
   contactName,
   country
 FROM Customers
 WHERE country NOT IN ('USA', 'Canada')
-ORDER BY contactName, country DESC;
+ORDER BY contactName DESC;
 
 -- Task 2.3
 -- 2.3	Выбрать из таблицы Customers все страны, в которых проживают заказчики. Страна должна быть упомянута только один раз, Результат должен быть отсортирован по убыванию. Не использовать предложение GROUP BY.
@@ -114,7 +115,12 @@ SELECT count(orderId)
 FROM orders;
 
 -- Task 6.2
--- 6.2	По таблице Orders найти количество заказов, cделанных каждым продавцом. Заказ для указанного продавца – это любая запись в таблице Orders, где в колонке employeeID задано значение для данного продавца. Запрос должен выбирать колонку с полным именем продавца (получается конкатенацией lastName & firstName из таблицы Employees)  с названием колонки ‘Seller’ и колонку c количеством заказов с названием 'Amount'. Полное имя продавца должно быть получено отдельным запросом в колонке основного запроса (после SELECT, до FROM). Результаты запроса должны быть упорядочены по убыванию количества заказов.
+-- 6.2	По таблице Orders найти количество заказов, cделанных каждым продавцом.
+-- Заказ для указанного продавца – это любая запись в таблице Orders, где в колонке employeeID задано значение для данного продавца.
+-- Запрос должен выбирать колонку с полным именем продавца (получается конкатенацией lastName & firstName из таблицы Employees)
+--  с названием колонки ‘Seller’ и колонку c количеством заказов с названием 'Amount'.
+-- Полное имя продавца должно быть получено отдельным запросом в колонке основного запроса (после SELECT, до FROM).
+-- Результаты запроса должны быть упорядочены по убыванию количества заказов.
 SELECT
   (SELECT concat(firstname, lastname) FROM employees e WHERE e.employeeid = o.employeeid) AS "Seller",
   count(orderid) AS Amount
@@ -123,7 +129,8 @@ GROUP BY employeeid
 ORDER BY Amount DESC;
 
 -- Task 6.3
--- 6.3	Выбрать 5 стран, в которых проживает наибольшее количество заказчиков. Список должен быть отсортирован по убыванию популярности. Запрос должен выбирать два столбца - сountry и Count (количество заказчиков).
+-- 6.3	Выбрать 5 стран, в которых проживает наибольшее количество заказчиков.
+-- Список должен быть отсортирован по убыванию популярности. Запрос должен выбирать два столбца - сountry и Count (количество заказчиков).
 SELECT *
 FROM (
   SELECT
@@ -184,12 +191,20 @@ GROUP BY city
 HAVING count(city) > 1;
 
 -- Task 6.7
--- 6.7	По таблице Employees найти для каждого продавца его руководителя, т.е. кому он делает репорты. Высветить колонки с именами 'User Name' (lastName) и 'Boss'. Имена должны выбираться из колонки lastName. Выбираются ли все продавцы в этом запросе?
+-- 6.7	По таблице Employees найти для каждого продавца его руководителя, т.е. кому он делает репорты.
+-- Высветить колонки с именами 'User Name' (lastName) и 'Boss'. Имена должны выбираться из колонки lastName.
+-- Выбираются ли все продавцы в этом запросе?
 SELECT
   e1.lastName AS "User Name",
   e2.lastName AS "Boss"
 FROM Employees e1 INNER JOIN Employees e2
 ON e1.reportsto = e2.employeeid;
+
+SELECT
+  e1.lastName AS "User Name",
+  e2.lastName AS "Boss"
+FROM Employees e1, Employees e2
+    WHERE e1.reportsto = e2.employeeid;
 
 -- Task 7.1
 -- 7.1	Определить продавцов, которые обслуживают регион 'Western' (таблица Region). Запрос должен выбирать: 'lastName' продавца и название обслуживаемой территории (столбец territoryDescription из таблицы Territories). Запрос должен использовать JOIN в предложении FROM. Для определения связей между таблицами Employees и Territories надо использовать графическую схему для базы Southwind.
@@ -288,7 +303,7 @@ DECLARE
   P_EMPLOYEE_ID NUMBER;
   v_Return NUMBER;
 BEGIN
-  P_EMPLOYEE_ID := 5;
+  P_EMPLOYEE_ID := 2;
 
   v_Return := ISBOSS(
       P_EMPLOYEE_ID => P_EMPLOYEE_ID
@@ -297,3 +312,9 @@ BEGIN
   DBMS_OUTPUT.PUT_LINE('v_Return = ' || v_Return);
 
 END;
+
+SELECT
+  lpad(' ', 3*level)||firstname||lastname
+FROM employees
+START WITH employeeid = 2
+CONNECT BY reportsto = PRIOR employeeid;
